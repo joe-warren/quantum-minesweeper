@@ -1,4 +1,4 @@
 <g>
-   <path class="light" fill="white" d="M 32 0 L 30 2 L 2 2 L 2 30 L 0 32 L 0 0 z"/>
-   <path class="shadow" fill="darkgrey" d="M 32 0 L 30 2 L 30 30 L 2 30 L 0 32 L 32 32z"/>
+   <path class="light" d="M 32 0 L 30 2 L 2 2 L 2 30 L 0 32 L 0 0 z"/>
+   <path class="shadow" d="M 32 0 L 30 2 L 30 30 L 2 30 L 0 32 L 32 32z"/>
 </g>

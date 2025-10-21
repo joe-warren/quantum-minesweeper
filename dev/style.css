@@ -11,3 +11,19 @@
     width: 600px;
     max-width: 100%;
 }
+
+.light {
+    fill: white;
+}
+
+.shadow {
+    fill: darkgrey;
+}
+
+.flagpole {
+    fill: black;
+}
+
+.flag {
+    fill: red;
+}
