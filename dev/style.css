@@ -25,5 +25,40 @@
 }
 
 .flag {
-    fill: red;
+    fill: #F25;
+}
+
+.revealed-square {
+    font-family: "share tech mono";
+    font-size: 32px;
+    text-anchor: middle;
+    dominant-baseline: central;
+}
+
+.value-1 {
+    fill: #F25
+}
+.value-2 {
+    fill: #27F
+}
+.value-3 {
+    fill: #0B5
+}
+.value-4 {
+    fill: #F82
+}
+.value-5 {
+    fill: #F5A
+}
+.value-5 {
+    fill: #EE0
+}
+.value-6 {
+    fill: #B2B
+}
+.value-7 {
+    fill: #F9F
+}
+.value-8 {
+    fill: #8FD
 }

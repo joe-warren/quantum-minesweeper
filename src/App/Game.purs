@@ -8,6 +8,7 @@ module App.Game
   where
 
 import Prelude
+
 import App.Grid (Grid, Coordinates, Square (..))
 import App.Grid as Grid
 import Halogen as H
@@ -71,6 +72,16 @@ renderSquare c square =
     , case square of
         UnrevealedSquare -> Icons.iconUnclicked []
         FlaggedSquare -> Icons.iconFlag []
+        RevealedSquare i | i > 0 -> 
+          HSE.text 
+            [ HSA.classes 
+              [ HH.ClassName "revealed-square"
+              , HH.ClassName ( "value-" <> show i )
+              ]
+            , HSA.x (cellSize / 2.0)
+            , HSA.y (cellSize / 2.0)
+            ]
+            [ HH.text (show i) ]
         _ -> HSE.g [] []
     ]
 
@@ -101,6 +112,7 @@ flag c st =
 clear :: Coordinates -> State -> State
 clear c st = 
   let f UnrevealedSquare = RevealedSquare 0
+      f (RevealedSquare i) = RevealedSquare (i + 1)
       f x = x
   in st { board = Grid.modifyAt' c f st.board }
 
