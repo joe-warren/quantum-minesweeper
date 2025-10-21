@@ -27,6 +27,24 @@
 .flag {
     fill: #F25;
 }
+.mine-background {
+    fill: #F32
+}
+.mine {
+    fill: black
+}
+@keyframes MineWobble {
+  0%   {transform: rotate(0deg);}
+  80%   {transform: rotate(0deg);}
+  85%   {transform: rotate(20deg);}
+  90%   {transform: rotate(-20deg);}
+  95%   {transform: rotate(20deg);}
+  100%   {transform: rotate(0deg);}
+}
+
+.mine-wobble {
+    animation: 3s linear 0s infinite normal MineWobble;
+}
 
 .revealed-square {
     font-family: "share tech mono";

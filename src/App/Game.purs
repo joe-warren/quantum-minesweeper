@@ -3,14 +3,17 @@ module App.Game
   , Command(..)
   , State
   , component
+  , handleAction
   , render
   )
   where
 
 import Prelude
 
-import App.Grid (Grid, Coordinates, Square (..))
+import App.Grid (Grid, Coordinates)
 import App.Grid as Grid
+import App.Square as Square
+import App.Square (Square)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
@@ -70,9 +73,10 @@ renderSquare c square =
     ]
     [ HSE.rect [HSA.width cellSize, HSA.height cellSize, HSA.class_ (HH.ClassName "background")]
     , case square of
-        UnrevealedSquare -> Icons.iconUnclicked []
-        FlaggedSquare -> Icons.iconFlag []
-        RevealedSquare i | i > 0 -> 
+        Square.Unrevealed -> Icons.iconUnclicked []
+        Square.Mine -> Icons.iconMine []
+        Square.Flagged -> Icons.iconFlag []
+        Square.Revealed i | i > 0 -> 
           HSE.text 
             [ HSA.classes 
               [ HH.ClassName "revealed-square"
@@ -104,15 +108,16 @@ render state =
 
 flag :: Coordinates -> State -> State
 flag c st = 
-  let f FlaggedSquare = UnrevealedSquare
-      f UnrevealedSquare = FlaggedSquare
+  let f Square.Flagged = Square.Unrevealed
+      f Square.Unrevealed = Square.Flagged
       f x = x
   in st { board = Grid.modifyAt' c f st.board }
 
 clear :: Coordinates -> State -> State
 clear c st = 
-  let f UnrevealedSquare = RevealedSquare 0
-      f (RevealedSquare i) = RevealedSquare (i + 1)
+  let f Square.Unrevealed = Square.Revealed 0
+      f (Square.Revealed 8) = Square.Mine
+      f (Square.Revealed i) = Square.Revealed (i + 1)
       f x = x
   in st { board = Grid.modifyAt' c f st.board }
 

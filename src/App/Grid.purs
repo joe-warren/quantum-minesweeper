@@ -12,12 +12,8 @@ import Data.Traversable (sequence, traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
 import Icons as Icons
-
-data Square = 
-    RevealedSquare Int
-    | FlaggedSquare
-    | MineSquare
-    | UnrevealedSquare
+import App.Square (Square)
+import App.Square as Square
 
 --| This is borrowed from purescript-grid-reactors
 data Grid a = Grid (Array a) { width :: Int, height :: Int }
@@ -67,4 +63,4 @@ replicate :: forall a. Int -> Int -> a -> Grid a
 replicate width height x = Grid (Array.replicate (width * height) x) { width, height }
 
 empty :: Int -> Int -> Grid Square
-empty w h = replicate w h UnrevealedSquare
+empty w h = replicate w h Square.Unrevealed

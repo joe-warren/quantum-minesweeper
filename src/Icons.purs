@@ -24,6 +24,88 @@ iconFlag attrs =
     ]
   ]
 
+iconMine :: forall p r i. Array (IProp r i) -> HTML p i
+iconMine attrs =
+  elementNS ns (ElemName "g")
+  ( attrs <> [ ])
+  [ elementNS ns (ElemName "rect")
+    [ attr (AttrName "class") "mine-background"
+    , attr (AttrName "width") "32"
+    , attr (AttrName "height") "32"
+    ]
+    [ 
+    ], elementNS ns (ElemName "circle")
+    [ attr (AttrName "class") "mine"
+    , attr (AttrName "cx") "16"
+    , attr (AttrName "cy") "16"
+    , attr (AttrName "r") "10"
+    ]
+    [ 
+    ], elementNS ns (ElemName "g")
+    [ attr (AttrName "transform") "translate(16, 16)"
+    ]
+    [ elementNS ns (ElemName "g")
+      [ attr (AttrName "class") "mine-wobble"
+      ]
+      [ elementNS ns (ElemName "rect")
+        [ attr (AttrName "class") "mine"
+        , attr (AttrName "x") "-2"
+        , attr (AttrName "y") "8"
+        , attr (AttrName "width") "4"
+        , attr (AttrName "height") "5"
+        , attr (AttrName "transform") "rotate(0)"
+        ]
+        [ 
+        ], elementNS ns (ElemName "rect")
+        [ attr (AttrName "class") "mine"
+        , attr (AttrName "x") "-2"
+        , attr (AttrName "y") "8"
+        , attr (AttrName "width") "4"
+        , attr (AttrName "height") "5"
+        , attr (AttrName "transform") "rotate(60)"
+        ]
+        [ 
+        ], elementNS ns (ElemName "rect")
+        [ attr (AttrName "class") "mine"
+        , attr (AttrName "x") "-2"
+        , attr (AttrName "y") "8"
+        , attr (AttrName "width") "4"
+        , attr (AttrName "height") "5"
+        , attr (AttrName "transform") "rotate(120)"
+        ]
+        [ 
+        ], elementNS ns (ElemName "rect")
+        [ attr (AttrName "class") "mine"
+        , attr (AttrName "x") "-2"
+        , attr (AttrName "y") "8"
+        , attr (AttrName "width") "4"
+        , attr (AttrName "height") "5"
+        , attr (AttrName "transform") "rotate(180)"
+        ]
+        [ 
+        ], elementNS ns (ElemName "rect")
+        [ attr (AttrName "class") "mine"
+        , attr (AttrName "x") "-2"
+        , attr (AttrName "y") "8"
+        , attr (AttrName "width") "4"
+        , attr (AttrName "height") "5"
+        , attr (AttrName "transform") "rotate(240)"
+        ]
+        [ 
+        ], elementNS ns (ElemName "rect")
+        [ attr (AttrName "class") "mine"
+        , attr (AttrName "x") "-2"
+        , attr (AttrName "y") "8"
+        , attr (AttrName "width") "4"
+        , attr (AttrName "height") "5"
+        , attr (AttrName "transform") "rotate(300)"
+        ]
+        [ 
+        ]
+      ]
+    ]
+  ]
+
 iconUnclicked :: forall p r i. Array (IProp r i) -> HTML p i
 iconUnclicked attrs =
   elementNS ns (ElemName "g")
