@@ -1,5 +1,6 @@
 module App.Game
   ( Action(..)
+  , Command(..)
   , State
   , component
   , render
@@ -19,19 +20,26 @@ import Data.Int as Int
 import Data.Array as Array
 import Data.FunctorWithIndex (mapWithIndex)
 import Icons as Icons
+import Handlers as Handlers
 import Web.UIEvent.MouseEvent as MouseEvent
+import Web.Event.Event (Event, preventDefault)
+import Data.Maybe
+import Data.Traversable (traverse_)
+import Effect.Class (class MonadEffect, liftEffect)
 
 type State
   = { board :: Grid Square 
     , minecount :: Int
     }
 
-data Action
+data Command
   = Clear Coordinates
   | Flag Coordinates
   | Qntm
 
-component :: forall q i o m. H.Component q i o m
+data Action = Action (Maybe Event) Command
+
+component :: forall q i o m. MonadEffect m => H.Component q i o m
 component =
   H.mkComponent
     { initialState: \_ -> { board : Grid.empty 16 16, minecount : 30 }
@@ -43,7 +51,7 @@ cellSize :: Number
 cellSize = 32.0
 
 
-click :: Coordinates -> MouseEvent.MouseEvent -> Action
+click :: Coordinates -> MouseEvent.MouseEvent -> Command
 click c ev = 
   case MouseEvent.button ev of
     0 -> if MouseEvent.metaKey ev || MouseEvent.ctrlKey ev
@@ -54,9 +62,10 @@ click c ev =
 
 renderSquare :: forall cs m. Coordinates -> Square -> H.ComponentHTML Action cs m
 renderSquare c square = 
-  HSE.g
+  HSE.element (HH.ElemName "g")
     [ HSA.transform [HSA.Translate (cellSize * Int.toNumber c.x) (cellSize * Int.toNumber c.y)]
-    , HE.onClick $ click c
+    , HE.onClick $ Action Nothing <<< click c
+    , Handlers.onContextMenu \ev -> Action (Just ev ) (Flag c)
     ]
     [ HSE.rect [HSA.width cellSize, HSA.height cellSize, HSA.class_ (HH.ClassName "background")]
     , case square of
@@ -72,7 +81,7 @@ render state =
   in HH.div
     [HP.class_ (HH.ClassName "content")]
     [ HH.button
-        [ HE.onClick \_ -> Qntm ]
+        [ HE.onClick \_ -> Action Nothing Qntm ]
         [ HH.text "Reveal A Square" ]
     , HH.br []
     , HSE.svg 
@@ -96,8 +105,11 @@ clear c st =
   in st { board = Grid.modifyAt' c f st.board }
 
 
-handleAction :: forall cs o m. Action → H.HalogenM State Action cs o m Unit
-handleAction = case _ of
-  Flag coords -> H.modify_ (flag coords)
-  Clear coords -> H.modify_ (clear coords)
-  _ -> H.modify_ \st -> st
+handleAction :: forall cs o m. MonadEffect m => Action → H.HalogenM State Action cs o m Unit
+handleAction (Action mayEv command) =
+  do 
+    liftEffect $ traverse_ preventDefault mayEv
+    case command of
+      Flag coords -> H.modify_ (flag coords)
+      Clear coords -> H.modify_ (clear coords)
+      _ -> H.modify_ \st -> st
