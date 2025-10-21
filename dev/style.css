@@ -2,6 +2,11 @@
     fill: lightgrey;
 }
 
+.content {
+    width: 100%;
+    text-align: center;
+}
+
 .gameboard {
     width: 600px;
     max-width: 100%;

@@ -1,16 +1,17 @@
 { name = "halogen-project"
-, dependencies = 
-    [ "console"
-    , "effect"
-    , "halogen"
-    , "halogen-svg-elems"
-    , "prelude"
-    , "arrays"
-    , "foldable-traversable"
-    , "integers"
-    , "maybe"
-    , "tuples"
-    ]
+, dependencies =
+  [ "arrays"
+  , "console"
+  , "effect"
+  , "foldable-traversable"
+  , "halogen"
+  , "halogen-svg-elems"
+  , "integers"
+  , "maybe"
+  , "prelude"
+  , "tuples"
+  , "web-uievents"
+  ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
 }
