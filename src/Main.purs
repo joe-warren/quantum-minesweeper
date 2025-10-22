@@ -10,4 +10,5 @@ import Halogen.VDom.Driver (runUI)
 main :: Effect Unit
 main = HA.runHalogenAff do
   body <- HA.awaitBody
-  runUI Game.component unit body
+  component <- Game.component
+  runUI component unit body

@@ -2,6 +2,7 @@
 , dependencies =
   [ "arrays"
   , "console"
+  , "control"
   , "effect"
   , "foldable-traversable"
   , "halogen"
@@ -9,6 +10,7 @@
   , "integers"
   , "maybe"
   , "prelude"
+  , "random"
   , "tuples"
   , "web-events"
   , "web-uievents"

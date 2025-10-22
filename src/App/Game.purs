@@ -23,6 +23,7 @@ import Halogen.Svg.Attributes as HSA
 import Data.Int as Int
 import Data.Array as Array
 import Data.FunctorWithIndex (mapWithIndex)
+import Data.Foldable (sum, foldr)
 import Icons as Icons
 import Handlers as Handlers
 import Web.UIEvent.MouseEvent as MouseEvent
@@ -33,7 +34,6 @@ import Effect.Class (class MonadEffect, liftEffect)
 
 type State
   = { board :: Grid Square 
-    , minecount :: Int
     }
 
 data Command
@@ -43,10 +43,12 @@ data Command
 
 data Action = Action (Maybe Event) Command
 
-component :: forall q i o m. MonadEffect m => H.Component q i o m
-component =
-  H.mkComponent
-    { initialState: \_ -> { board : Grid.empty 16 16, minecount : 30 }
+component :: forall q i o m. MonadEffect m => m (H.Component q i o m)
+component = do
+  g <- liftEffect $ Grid.randomGrid 16 16 40
+
+  pure $ H.mkComponent
+    { initialState: \_ -> { board : g }
     , render
     , eval: H.mkEval H.defaultEval { handleAction = handleAction }
     }
@@ -73,9 +75,9 @@ renderSquare c square =
     ]
     [ HSE.rect [HSA.width cellSize, HSA.height cellSize, HSA.class_ (HH.ClassName "background")]
     , case square of
-        Square.Unrevealed -> Icons.iconUnclicked []
-        Square.Mine -> Icons.iconMine []
-        Square.Flagged -> Icons.iconFlag []
+        Square.Unrevealed _ -> Icons.iconUnclicked []
+        Square.Exploded -> Icons.iconMine []
+        Square.Flagged _ -> Icons.iconFlag []
         Square.Revealed i | i > 0 -> 
           HSE.text 
             [ HSA.classes 
@@ -108,18 +110,36 @@ render state =
 
 flag :: Coordinates -> State -> State
 flag c st = 
-  let f Square.Flagged = Square.Unrevealed
-      f Square.Unrevealed = Square.Flagged
+  let f (Square.Flagged isMined) = Square.Unrevealed isMined
+      f (Square.Unrevealed isMined) = Square.Flagged isMined
       f x = x
   in st { board = Grid.modifyAt' c f st.board }
 
+countNeighbourMines :: Coordinates -> Grid Square -> Int
+countNeighbourMines c g = 
+  let f n = 
+        case Grid.index g n of 
+          Nothing -> 0
+          Just s -> case Square.isMined s of 
+            Square.Mined -> 1 
+            Square.Unmined -> 0
+  in sum <<< map f <<< Grid.neighbours $ c
+
 clear :: Coordinates -> State -> State
 clear c st = 
-  let f Square.Unrevealed = Square.Revealed 0
-      f (Square.Revealed 8) = Square.Mine
-      f (Square.Revealed i) = Square.Revealed (i + 1)
-      f x = x
-  in st { board = Grid.modifyAt' c f st.board }
+  case Grid.index (st.board) c of 
+          Nothing -> st 
+          Just (Square.Flagged _) -> st
+          Just (Square.Revealed _) -> st
+          Just s -> 
+            case Square.isMined s of 
+              Square.Mined -> st { board = Grid.updateAt' c Square.Exploded st.board }
+              Square.Unmined ->
+                let count = countNeighbourMines c st.board
+                    newSt = st { board = Grid.updateAt' c (Square.Revealed count) st.board }
+                in if count == 0 
+                      then foldr clear newSt (Grid.neighbours c)
+                      else newSt
 
 
 handleAction :: forall cs o m. MonadEffect m => Action → H.HalogenM State Action cs o m Unit

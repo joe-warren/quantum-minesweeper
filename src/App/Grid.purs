@@ -14,6 +14,9 @@ import Data.Tuple.Nested ((/\))
 import Icons as Icons
 import App.Square (Square)
 import App.Square as Square
+import Control.Alternative (guard)
+import Effect.Random (randomInt)
+import Effect (Effect)
 
 --| This is borrowed from purescript-grid-reactors
 data Grid a = Grid (Array a) { width :: Int, height :: Int }
@@ -40,6 +43,13 @@ to2D width i = { x: i `mod` width, y: i / width }
 size :: forall a. Grid a -> { width :: Int, height :: Int }
 size (Grid _ cfg) = cfg
 
+neighbours :: Coordinates -> Array Coordinates
+neighbours c = do
+  dx <- [-1, 0, 1]
+  dy <- [-1, 0, 1]
+  guard (dx /= 0 || dy /= 0)
+  pure {x: c.x + dx, y : c.y + dy }
+
 index :: forall a. Grid a -> Coordinates -> Maybe a
 index (Grid xs { height, width }) { x, y }
   | x < 0 || x >= width || y < 0 || y >= height = Nothing
@@ -63,4 +73,19 @@ replicate :: forall a. Int -> Int -> a -> Grid a
 replicate width height x = Grid (Array.replicate (width * height) x) { width, height }
 
 empty :: Int -> Int -> Grid Square
-empty w h = replicate w h Square.Unrevealed
+empty w h = replicate w h (Square.Unrevealed Square.Unmined)
+
+randomGrid :: Int -> Int -> Int -> Effect (Grid Square)
+randomGrid w h minecount = 
+  let go 0 g = pure g
+      go c g = do
+        x' <- randomInt 0 (w-1)  
+        y' <- randomInt 0 (h-1)  
+        let i = {x: x', y: y'}
+        case index g i of 
+          Nothing -> go c g
+          Just s -> 
+            case Square.isMined s of  
+              Square.Mined -> go c g
+              Square.Unmined -> go (c - 1) (updateAt' i (Square.Unrevealed Square.Mined) g)
+    in go minecount (empty w h)
