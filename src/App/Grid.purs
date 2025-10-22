@@ -1,10 +1,27 @@
-module App.Grid where
+module App.Grid
+  ( Coordinates
+  , Grid(..)
+  , countNeighbours
+  , empty
+  , index
+  , modifyAt
+  , modifyAt'
+  , neighbours
+  , randomGrid
+  , replicate
+  , size
+  , to1D
+  , to2D
+  , updateAt
+  , updateAt'
+  )
+  where
 
 import Prelude
 
 import Data.Array ((..))
 import Data.Array as Array
-import Data.Foldable (class Foldable, foldMap, foldl, foldr, for_, length)
+import Data.Foldable (class Foldable, foldMap, foldl, foldr, for_, length, sum)
 import Data.FunctorWithIndex (class FunctorWithIndex, mapWithIndex)
 import Data.Int.Bits ((.&.))
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -74,6 +91,14 @@ replicate width height x = Grid (Array.replicate (width * height) x) { width, he
 
 empty :: Int -> Int -> Grid Square
 empty w h = replicate w h (Square.Unrevealed Square.Unmined)
+
+countNeighbours :: forall a. (a -> Boolean) -> Coordinates -> Grid a -> Int
+countNeighbours f c g = 
+  let f' n = 
+        case index g n of 
+          Nothing -> 0
+          Just s -> if f s then 1 else 0
+  in sum <<< map f' <<< neighbours $ c
 
 randomGrid :: Int -> Int -> Int -> Effect (Grid Square)
 randomGrid w h minecount = 

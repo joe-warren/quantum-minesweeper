@@ -115,22 +115,34 @@ flag c st =
       f x = x
   in st { board = Grid.modifyAt' c f st.board }
 
+
+
 countNeighbourMines :: Coordinates -> Grid Square -> Int
-countNeighbourMines c g = 
-  let f n = 
-        case Grid.index g n of 
-          Nothing -> 0
-          Just s -> case Square.isMined s of 
-            Square.Mined -> 1 
-            Square.Unmined -> 0
-  in sum <<< map f <<< Grid.neighbours $ c
+countNeighbourMines = 
+  let f = (_ == Square.Mined ) <<< Square.isMined
+  in Grid.countNeighbours f
+
+
+countNeighbourFlags :: Coordinates -> Grid Square -> Int
+countNeighbourFlags = 
+  let f (Square.Flagged _) = true
+      f _ = false 
+  in Grid.countNeighbours f
 
 clear :: Coordinates -> State -> State
 clear c st = 
-  case Grid.index (st.board) c of 
+  let clearNeighbours st' =
+        let unrevealed (Just (Square.Unrevealed _)) = true
+            unrevealed _ = false
+            filterRevealed = Array.filter (unrevealed <<< Grid.index st'.board)
+         in foldr clear st' (filterRevealed <<< Grid.neighbours $ c)
+   in case Grid.index (st.board) c of 
           Nothing -> st 
           Just (Square.Flagged _) -> st
-          Just (Square.Revealed _) -> st
+          Just (Square.Revealed count) ->
+            if count == countNeighbourFlags c st.board 
+              then clearNeighbours st
+              else st
           Just s -> 
             case Square.isMined s of 
               Square.Mined -> st { board = Grid.updateAt' c Square.Exploded st.board }
@@ -138,7 +150,7 @@ clear c st =
                 let count = countNeighbourMines c st.board
                     newSt = st { board = Grid.updateAt' c (Square.Revealed count) st.board }
                 in if count == 0 
-                      then foldr clear newSt (Grid.neighbours c)
+                      then clearNeighbours newSt
                       else newSt
 
 

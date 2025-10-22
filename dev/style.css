@@ -53,6 +53,7 @@
     font-size: 32px;
     text-anchor: middle;
     dominant-baseline: central;
+    user-select: none;
 }
 
 .value-1 {
