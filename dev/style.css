@@ -1,5 +1,7 @@
 .background {
     fill: lightgrey;
+    stroke: #DDD;
+    stroke-width: 1;
 }
 
 .content {
