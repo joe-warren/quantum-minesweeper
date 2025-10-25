@@ -1,12 +1,12 @@
 module App.Grid
   ( Coordinates
   , Grid(..)
+  , neighbours
   , countNeighbours
   , empty
   , index
   , modifyAt
   , modifyAt'
-  , neighbours
   , randomGrid
   , replicate
   , size
@@ -23,6 +23,7 @@ import Data.Array ((..))
 import Data.Array as Array
 import Data.Foldable (class Foldable, foldMap, foldl, foldr, for_, length, sum)
 import Data.FunctorWithIndex (class FunctorWithIndex, mapWithIndex)
+import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex, foldMapWithIndex)
 import Data.Int.Bits ((.&.))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Traversable (sequence, traverse)
@@ -50,6 +51,11 @@ instance Foldable Grid where
     foldr f z (Grid xs _) = foldr f z xs
     foldl f z (Grid xs _) = foldl f z xs
     foldMap f (Grid xs _) = foldMap f xs
+
+instance FoldableWithIndex Coordinates Grid where
+  foldrWithIndex f z (Grid xs cfg) = foldrWithIndex (f <<< to2D cfg.width) z xs
+  foldlWithIndex f z (Grid xs cfg) = foldlWithIndex (f <<< to2D cfg.width) z xs 
+  foldMapWithIndex f (Grid xs cfg) = foldMapWithIndex (f <<< to2D cfg.width) xs
 
 to1D :: Int -> Coordinates -> Int
 to1D width { x, y } = y * width + x
