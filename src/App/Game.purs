@@ -4,7 +4,6 @@ module App.Game
   , State
   , component
   , handleAction
-  , render
   )
   where
 
@@ -23,7 +22,7 @@ import Halogen.Svg.Attributes as HSA
 import Data.Int as Int
 import Data.Array as Array
 import Data.FunctorWithIndex (mapWithIndex)
-import Data.Foldable (sum, foldr)
+import Data.Foldable (sum, foldr, any, all)
 import Icons as Icons
 import Handlers as Handlers
 import Web.UIEvent.MouseEvent as MouseEvent
@@ -34,12 +33,14 @@ import Effect.Class (class MonadEffect, liftEffect)
 
 type State
   = { board :: Grid Square 
+    , deaths :: Int
     }
 
 data Command
   = Clear Coordinates
   | Flag Coordinates
   | Qntm
+  | Undo
 
 data Action = Action (Maybe Event) Command
 
@@ -48,7 +49,7 @@ component = do
   g <- liftEffect $ Grid.randomGrid 16 16 40
 
   pure $ H.mkComponent
-    { initialState: \_ -> { board : g }
+    { initialState: \_ -> { board : g, deaths: 0 }
     , render
     , eval: H.mkEval H.defaultEval { handleAction = handleAction }
     }
@@ -65,6 +66,30 @@ click c ev =
           else Clear c
     _ -> Flag c
 
+minecount :: Grid Square -> Int
+minecount = 
+    let f s = if Square.Mined == Square.isMined s then 1 else 0
+      in sum <<< map f
+
+      
+flagcount :: Grid Square -> Int
+flagcount = 
+    let f (Square.Flagged _) = 1
+        f _ = 0
+      in sum <<< map f
+
+solved :: Grid Square -> Boolean
+solved = 
+  let f (Square.Revealed _) = true
+      f s = Square.Mined == Square.isMined s
+    in all f
+
+    
+failed :: Grid Square -> Boolean
+failed = 
+  let f (Square.Exploded) = true
+      f _ = false
+    in any f
 
 renderSquare :: forall cs m. Coordinates -> Square -> H.ComponentHTML Action cs m
 renderSquare c square = 
@@ -100,12 +125,26 @@ render state =
     [ HH.button
         [ HE.onClick \_ -> Action Nothing Qntm ]
         [ HH.text "Reveal A Square" ]
+    , if failed state.board
+        then HH.button
+          [ HE.onClick \_ -> Action Nothing Undo ]
+          [ HH.text "Undo" ]
+        else HH.text ""
     , HH.br []
     , HSE.svg 
         [ HSA.viewBox 0.0 0.0  sw sh
         , HSA.class_ (HH.ClassName "gameboard")
         ]
         (Array.fromFoldable (mapWithIndex renderSquare state.board))
+    , HH.p 
+      []
+      [HH.text (show (flagcount state.board) <> "/" <> show (minecount state.board) <> " mines")
+      , case state.deaths of
+          0 -> HH.text ""
+          1 -> HH.text ", 1 death"
+          deaths -> HH.text (", " <> show deaths <> " deaths")
+      ]
+    
     ]
 
 flag :: Coordinates -> State -> State
@@ -113,7 +152,9 @@ flag c st =
   let f (Square.Flagged isMined) = Square.Unrevealed isMined
       f (Square.Unrevealed isMined) = Square.Flagged isMined
       f x = x
-  in st { board = Grid.modifyAt' c f st.board }
+  in if failed (st.board)
+        then st
+        else st { board = Grid.modifyAt' c f st.board }
 
 
 
@@ -136,23 +177,33 @@ clear c st =
             unrevealed _ = false
             filterRevealed = Array.filter (unrevealed <<< Grid.index st'.board)
          in foldr clear st' (filterRevealed <<< Grid.neighbours $ c)
-   in case Grid.index (st.board) c of 
-          Nothing -> st 
-          Just (Square.Flagged _) -> st
-          Just (Square.Revealed count) ->
-            if count == countNeighbourFlags c st.board 
-              then clearNeighbours st
-              else st
-          Just s -> 
-            case Square.isMined s of 
-              Square.Mined -> st { board = Grid.updateAt' c Square.Exploded st.board }
-              Square.Unmined ->
-                let count = countNeighbourMines c st.board
-                    newSt = st { board = Grid.updateAt' c (Square.Revealed count) st.board }
-                in if count == 0 
-                      then clearNeighbours newSt
-                      else newSt
+  in if failed (st.board)
+      then st
+      else 
+        case Grid.index (st.board) c of 
+            Nothing -> st 
+            Just (Square.Flagged _) -> st
+            Just (Square.Revealed count) ->
+              if count == countNeighbourFlags c st.board 
+                then clearNeighbours st
+                else st
+            Just s -> 
+              case Square.isMined s of 
+                Square.Mined -> st { board = Grid.updateAt' c Square.Exploded st.board }
+                Square.Unmined ->
+                  let count = countNeighbourMines c st.board
+                      newSt = st { board = Grid.updateAt' c (Square.Revealed count) st.board }
+                  in if count == 0 
+                        then clearNeighbours newSt
+                        else newSt
 
+undo :: State -> State
+undo st =
+  let reset Square.Exploded = Square.Unrevealed Square.Mined
+      reset s = s
+  in st { board = map reset st.board
+        , deaths = st.deaths + 1
+        }
 
 handleAction :: forall cs o m. MonadEffect m => Action → H.HalogenM State Action cs o m Unit
 handleAction (Action mayEv command) =
@@ -161,4 +212,5 @@ handleAction (Action mayEv command) =
     case command of
       Flag coords -> H.modify_ (flag coords)
       Clear coords -> H.modify_ (clear coords)
+      Undo -> H.modify_ (undo)
       _ -> H.modify_ \st -> st
