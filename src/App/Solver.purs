@@ -35,6 +35,7 @@ type Constraint =
 type SolveState s =
     { constraints :: Set Constraint
     , regions :: Map (Set Grid.Coordinates) (STArray s Int)
+    , regionSizes :: Map (Set Grid.Coordinates) Int
     }
 
 initialSolveState :: forall s. Grid Square -> ST s (SolveState s)
@@ -58,11 +59,13 @@ initialSolveState g =
                         }
                 lookup _ _ = Set.empty
             in foldMapWithIndex lookup g
+        regionSizes = Map.fromFoldableWith (+) <<< map (\i -> (Tuple i 1)) <<< Array.fromFoldable $ allRegions
         newArray i = STArray.thaw (Array.range 0 i)
     in do
-        regions <- traverse newArray <<< Map.fromFoldableWith (+) <<< map (\i -> (Tuple i 1)) <<< Array.fromFoldable $ allRegions
+        regions <- traverse newArray regionSizes
         pure
             { constraints: allConstraints
             , regions: regions
+            , regionSizes: regionSizes
             }
 
